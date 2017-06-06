@@ -20,9 +20,9 @@ import java.util.Random;
 
 import id.zelory.compressor.Compressor;
 import id.zelory.compressor.FileUtil;
-import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.functions.Consumer;
-import io.reactivex.schedulers.Schedulers;
+import rx.android.schedulers.AndroidSchedulers;
+import rx.functions.Action1;
+import rx.schedulers.Schedulers;
 
 public class MainActivity extends AppCompatActivity {
     private static final int PICK_IMAGE_REQUEST = 1;
@@ -70,15 +70,15 @@ public class MainActivity extends AppCompatActivity {
                     .compressToFileAsObservable(actualImage)
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(new Consumer<File>() {
+                    .subscribe(new Action1<File>() {
                         @Override
-                        public void accept(File file) {
+                        public void call(File file) {
                             compressedImage = file;
                             setCompressedImage();
                         }
-                    }, new Consumer<Throwable>() {
+                    }, new Action1<Throwable>() {
                         @Override
-                        public void accept(Throwable throwable) {
+                        public void call(Throwable throwable) {
                             showError(throwable.getMessage());
                         }
                     });
