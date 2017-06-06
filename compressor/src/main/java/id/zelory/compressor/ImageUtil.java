@@ -33,6 +33,7 @@ class ImageUtil {
 
     static Bitmap getScaledBitmap(Context context, Uri imageUri, float maxWidth, float maxHeight, Bitmap.Config bitmapConfig) {
         String filePath = FileUtil.getRealPathFromURI(context, imageUri);
+
         Bitmap scaledBitmap = null;
 
         BitmapFactory.Options options = new BitmapFactory.Options();
@@ -143,8 +144,8 @@ class ImageUtil {
                 matrix.postRotate(270);
             }
             scaledBitmap = Bitmap.createBitmap(scaledBitmap, 0, 0,
-                                               scaledBitmap.getWidth(), scaledBitmap.getHeight(),
-                                               matrix, true);
+                    scaledBitmap.getWidth(), scaledBitmap.getHeight(),
+                    matrix, true);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -154,15 +155,24 @@ class ImageUtil {
 
     static File compressImage(Context context, Uri imageUri, float maxWidth, float maxHeight,
                               Bitmap.CompressFormat compressFormat, Bitmap.Config bitmapConfig,
-                              int quality, String parentPath, String prefix, String fileName) {
+                              int quality, long minimumFileSize, String parentPath, String prefix, String fileName) {
         FileOutputStream out = null;
         String filename = generateFilePath(context, parentPath, imageUri, compressFormat.name().toLowerCase(), prefix, fileName);
         try {
             out = new FileOutputStream(filename);
 
             //write the compressed bitmap at the destination specified by filename.
-            ImageUtil.getScaledBitmap(context, imageUri, maxWidth, maxHeight, bitmapConfig).compress(compressFormat, quality, out);
-
+            Bitmap bitmap = ImageUtil.getScaledBitmap(context, imageUri, maxWidth, maxHeight, bitmapConfig);
+            if (minimumFileSize > 0) {
+                bitmap.compress(compressFormat, 100, out);
+                File tmp = new File(filename);
+                if (tmp.length() > minimumFileSize) {
+                    tmp.delete();
+                    bitmap.compress(compressFormat, quality, out);
+                }
+            } else {
+                bitmap.compress(compressFormat, quality, out);
+            }
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } finally {
