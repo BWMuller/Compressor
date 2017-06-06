@@ -161,17 +161,48 @@ class ImageUtil {
         try {
             out = new FileOutputStream(filename);
 
-            //write the compressed bitmap at the destination specified by filename.
-            Bitmap bitmap = ImageUtil.getScaledBitmap(context, imageUri, maxWidth, maxHeight, bitmapConfig);
             if (minimumFileSize > 0) {
-                bitmap.compress(compressFormat, 100, out);
-                File tmp = new File(filename);
-                if (tmp.length() > minimumFileSize) {
-                    tmp.delete();
+                String filePath = FileUtil.getRealPathFromURI(context, imageUri);
+                File tmp = new File(filePath);
+
+                if (tmp.length() <= minimumFileSize) {
+                    try {
+                        InputStream inStream = new FileInputStream(filePath);
+                        byte[] buffer = new byte[1444];
+                        int read = 0;
+                        while ((read = inStream.read(buffer)) != -1) {
+                            out.write(buffer, 0, read);
+                        }
+                        inStream.close();
+                        return new File(filename);
+                    } catch (IOException ex) {
+                        ex.printStackTrace();
+                    }
+                }
+
+                //write the compressed bitmap at the destination specified by filename.
+                Bitmap bitmap = ImageUtil.getScaledBitmap(context, imageUri, maxWidth, maxHeight, bitmapConfig);
+                FileOutputStream tmpOut = null;
+                try {
+                    tmp = File.createTempFile("tmp_" + System.currentTimeMillis(), "");
+                    tmpOut = new FileOutputStream(tmp);
+                    bitmap.compress(compressFormat, 100, tmpOut);
+                    if (tmp.length() > minimumFileSize) {
+                        bitmap.compress(compressFormat, quality, out);
+                    }
+                } catch (IOException ex) {
+                    ex.printStackTrace();
                     bitmap.compress(compressFormat, quality, out);
+                } finally {
+                    try {
+                        if (tmpOut != null) {
+                            tmpOut.close();
+                        }
+                    } catch (IOException ignored) {
+                    }
                 }
             } else {
-                bitmap.compress(compressFormat, quality, out);
+                ImageUtil.getScaledBitmap(context, imageUri, maxWidth, maxHeight, bitmapConfig).compress(compressFormat, quality, out);
             }
         } catch (FileNotFoundException e) {
             e.printStackTrace();
