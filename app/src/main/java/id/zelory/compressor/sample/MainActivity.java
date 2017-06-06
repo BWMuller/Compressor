@@ -91,10 +91,10 @@ public class MainActivity extends AppCompatActivity {
         } else {
             // Compress image in main thread using custom Compressor
             compressedImage = new Compressor.Builder(this)
-                    .setMaxWidth(640)
-                    .setMaxHeight(480)
-                    .setQuality(75)
-                    .setCompressFormat(Bitmap.CompressFormat.WEBP)
+                    .setQuality(80)
+                    .setStepwiseQualityReduction(5)
+                    .setMinimumFileSize(1024 * 150)
+                    .setCompressFormat(Bitmap.CompressFormat.JPEG)
                     .setDestinationDirectoryPath(Environment.getExternalStoragePublicDirectory(
                             Environment.DIRECTORY_PICTURES).getAbsolutePath())
                     .build()

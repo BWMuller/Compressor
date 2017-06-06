@@ -155,7 +155,7 @@ class ImageUtil {
 
     static File compressImage(Context context, Uri imageUri, float maxWidth, float maxHeight,
                               Bitmap.CompressFormat compressFormat, Bitmap.Config bitmapConfig,
-                              int quality, long minimumFileSize, String parentPath, String prefix, String fileName) {
+                              int quality, int qualityReductionSteps, long minimumFileSize, String parentPath, String prefix, String fileName) {
         FileOutputStream out = null;
         String filename = generateFilePath(context, parentPath, imageUri, compressFormat.name().toLowerCase(), prefix, fileName);
         try {
@@ -188,7 +188,7 @@ class ImageUtil {
                     tmpOut = new FileOutputStream(tmp);
                     bitmap.compress(compressFormat, 100, tmpOut);
                     if (tmp.length() > minimumFileSize) {
-                        bitmap.compress(compressFormat, quality, out);
+                        compressToIdealQuality(out, bitmap, compressFormat, quality, 100, qualityReductionSteps, minimumFileSize);
                     }
                 } catch (IOException ex) {
                     ex.printStackTrace();
@@ -216,6 +216,38 @@ class ImageUtil {
         }
 
         return new File(filename);
+    }
+
+    private static void compressToIdealQuality(FileOutputStream out, Bitmap bitmap, Bitmap.CompressFormat compressFormat, int origQuality, int quality, int qualityReductionSteps, long minimumFileSize) {
+        if (quality >= 100) {
+            quality = qualityReductionSteps == 0 ? quality : 100 - qualityReductionSteps;
+        }
+        if (origQuality >= quality) {
+            bitmap.compress(compressFormat, origQuality, out);
+            return;
+        }
+        FileOutputStream tmpOut = null;
+        try {
+            File tmp = File.createTempFile("tmp_" + System.currentTimeMillis(), "");
+            tmpOut = new FileOutputStream(tmp);
+            bitmap.compress(compressFormat, quality, tmpOut);
+            if (tmp.length() > minimumFileSize) {
+                compressToIdealQuality(out, bitmap, compressFormat, origQuality, quality - qualityReductionSteps, qualityReductionSteps, minimumFileSize);
+            } else {
+                bitmap.compress(compressFormat, quality, out);
+            }
+            tmp.delete();
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            bitmap.compress(compressFormat, quality, out);
+        } finally {
+            try {
+                if (tmpOut != null) {
+                    tmpOut.close();
+                }
+            } catch (IOException ignored) {
+            }
+        }
     }
 
     private static String generateFilePath(Context context, String parentPath, Uri uri,

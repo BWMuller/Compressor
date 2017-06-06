@@ -31,6 +31,7 @@ public class Compressor {
     private String fileName;
 
     private long minimumFileSize = -1;
+    private int qualityReductionSteps;
 
     private Compressor(Context context) {
         this.context = context;
@@ -50,7 +51,7 @@ public class Compressor {
 
     public File compressToFile(File file) {
         return ImageUtil.compressImage(context, Uri.fromFile(file), maxWidth, maxHeight,
-            compressFormat, bitmapConfig, quality, minimumFileSize, destinationDirectoryPath,
+            compressFormat, bitmapConfig, quality, qualityReductionSteps, minimumFileSize, destinationDirectoryPath,
             fileNamePrefix, fileName);
     }
 
@@ -129,6 +130,11 @@ public class Compressor {
 
         public Builder setMinimumFileSize(long minimumFileSize) {
             compressor.minimumFileSize = minimumFileSize;
+            return this;
+        }
+
+        public Builder setStepwiseQualityReduction(int qualityReductionSteps) {
+            compressor.qualityReductionSteps = qualityReductionSteps;
             return this;
         }
     }
